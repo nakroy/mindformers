@@ -1,5 +1,9 @@
 # output file
 research/output
+research/kernel_meta*
+chat_web/output
+chat_web/kernel_meta*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -54,7 +54,7 @@ def get_tokenizer(config: MindFormerConfig):
     
     elif config.trainer.model_name == 'qwen2_72b':
         second_config = ServerConfig(default_config['model']['config']).config
-        return Qwen2Tokenizer(second_config['processor']['tokenizer']['vocab_file'],
+        return  Qwen2Tokenizer(second_config['processor']['tokenizer']['vocab_file'],
                               second_config['processor']['tokenizer']['merges_file'])
     else:
         #return AutoTokenizer.from_pretrained(config.processor.tokenizer.vocab_file)
@@ -65,7 +65,6 @@ def build_prompt(inputs: str):
     prompt = "{}"  # You can modify this to build prompt for your model input
     return prompt.format(inputs)
 
-
 def build_multi_round(inputs, history):
     """Build multi round"""
     multi_round_prompt = ""  # You can modify this to build multi-round input for your model input
@@ -73,7 +72,6 @@ def build_multi_round(inputs, history):
     for i, (query, response) in enumerate(history):
         prev_rounds += multi_round_prompt.format(i, query, response)
     return prev_rounds + inputs
-
 
 def generate_process(device_id: int,
                      device_num: int,

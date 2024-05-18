@@ -7,42 +7,42 @@
             "device": [
                 {
                     "device_id": "0",
-                    "device_ip": "192.168.3.210",
+                    "device_ip": "192.168.10.3",
                     "rank_id": "0"
                 },
                 {
                     "device_id": "1",
-                    "device_ip": "192.168.3.211",
+                    "device_ip": "192.168.11.6",
                     "rank_id": "1"
                 },
                 {
                     "device_id": "2",
-                    "device_ip": "192.168.3.212",
+                    "device_ip": "192.168.12.13",
                     "rank_id": "2"
                 },
                 {
                     "device_id": "3",
-                    "device_ip": "192.168.3.213",
+                    "device_ip": "192.168.13.16",
                     "rank_id": "3"
                 },
                 {
                     "device_id": "4",
-                    "device_ip": "192.168.3.214",
+                    "device_ip": "192.168.10.18",
                     "rank_id": "4"
                 },
                 {
                     "device_id": "5",
-                    "device_ip": "192.168.3.215",
+                    "device_ip": "192.168.11.23",
                     "rank_id": "5"
                 },
                 {
                     "device_id": "6",
-                    "device_ip": "192.168.3.216",
+                    "device_ip": "192.168.12.27",
                     "rank_id": "6"
                 },
                 {
                     "device_id": "7",
-                    "device_ip": "192.168.3.217",
+                    "device_ip": "192.168.13.30",
                     "rank_id": "7"
                 }
             ],

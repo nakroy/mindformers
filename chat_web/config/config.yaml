@@ -1,19 +1,19 @@
 server:
-  host: "127.0.0.1"
+  host: "0.0.0.0"
   port: 11111  # the port that server is listening
   uvicorn_level: 'info'
   access_log: True  # whether open server logging
 
 web_demo:
-  host: "127.0.0.1"
+  host: "0.0.0.0"
   port: 7860
 
 model:
-  config: "/home/HwHiAiUser/project/mindformers/research/qwen1_5/run_qwen1_5_72b_infer.yaml"
+  config: "/home/mindformers/research/qwen1_5/run_qwen1_5_72b_infer.yaml"
   device_num: 8
   device_id: 0
   device_range: [0,8]
-  rank_table_file: "/home/HwHiAiUser/project/mindformers/hccl_8p_01234567_127.0.1.1.json"
+  rank_table_file: "/home/mindformers/hccl_8p_01234567_127.0.1.1.json"
   hccl_connect_time: "3600"
 
 default_generation_args:

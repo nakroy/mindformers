@@ -1,6 +1,7 @@
 seed: 0
 output_dir: './output' # path to save checkpoint/strategy
-load_checkpoint: '/home/HwHiAiUser/project/mindformers/research/output/transformed_checkpoint/qwen1_5_72B_ckpt'
+load_checkpoint: '/home/mindformers/research/output/transformed_checkpoint/qwen1_5-72B-ckpt'
+#load_checkpoint: '/home/model_weights/qwen1_5-72B-ckpt/'
 src_strategy_path_or_dir: ''
 auto_trans_ckpt: False  # If true, auto transform load_checkpoint to load in distributed model
 only_save_strategy: False
@@ -72,21 +73,22 @@ model:
     rms_norm_eps: 1.0e-5
     theta: 1000000.0
     emb_dropout_prob: 0.0
-    eos_token_id: 151643
-    pad_token_id: 151643
+    bos_token_id: 151644
+    eos_token_id: 151645
+    pad_token_id: 151645
     compute_dtype: "float16"
     layernorm_compute_type: "float32"
     softmax_compute_type: "float16"
     rotary_dtype: "float16"
     param_init_type: "float16"
     use_past: True
-    use_flash_attention: True
-    use_past_shard: True
+    use_flash_attention: False
+    use_past_shard: False
     offset: 0
-    checkpoint_name_or_path: "/home/HwHiAiUser/project/mindformers/research/output/transformed_checkpoint/qwen1_5_72B_ckpt"
-    repetition_penalty: 1.05
-    max_decode_length: 8192
-    top_k: 3
+    checkpoint_name_or_path: ""
+    repetition_penalty: 1
+    max_decode_length: 512
+    top_k: 0
     top_p: 0.8
     do_sample: True
     compute_in_2d: True
@@ -97,8 +99,8 @@ processor:
   return_tensors: ms
   tokenizer:
     model_max_length: 32768
-    vocab_file: "/home/HwHiAiUser/project/model_weights/qwen1_5_72B_pytorch/vocab.json"
-    merges_file: "/home/HwHiAiUser/project/model_weights/qwen1_5_72B_pytorch/merges.txt"
+    vocab_file: "/home/model_weights/qwen1_5-72B/vocab.json"
+    merges_file: "/home/model_weights/qwen1_5-72B/merges.txt"
     unk_token: "<|endoftext|>"
     eos_token: "<|endoftext|>"
     pad_token: "<|endoftext|>"
