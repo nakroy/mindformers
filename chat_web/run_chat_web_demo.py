@@ -114,7 +114,7 @@ def _predict(inputs, bot, history, do_sample, top_k, top_p, temperature, repetit
     }
 
     try:
-        response = requests.post(URL, json=data, timeout=3000, stream=True)
+        response = requests.post(URL, json=data, timeout=60, stream=True)
         for line in response.iter_lines():
             if line:
                 line = line.decode(errors='replace')
@@ -187,7 +187,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                 rp_number = gr.Number(value=1,
                                       label="repetition penalty", minimum=0,
                                       info="The penalty factor of the frequency that generated words")
-                max_len_number = gr.Number(value=128, minimum=0,
+                max_len_number = gr.Number(value=8192, minimum=0,
                                            label="max length", info="The maximum length of the generated words")
                 prompt_input = gr.Textbox(label="prompt", placeholder="No prompt...", info="Add prompt to input",
                                           lines=3)

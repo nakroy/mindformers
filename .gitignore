@@ -1,3 +1,7 @@
+# devcontainer
+.devcontainer
+.vscode
+
 # output file
 research/output
 research/kernel_meta*

@@ -63,7 +63,7 @@ model:
   model_config:
     type: LlamaConfig
     batch_size: 1
-    seq_length: 8192
+    seq_length: 16384
     hidden_size: 8192
     num_layers: 80
     num_heads: 64
@@ -83,7 +83,7 @@ model:
     param_init_type: "float16"
     use_past: True
     use_flash_attention: False
-    use_past_shard: False
+    use_past_shard: True
     offset: 0
     checkpoint_name_or_path: ""
     repetition_penalty: 1

@@ -25,6 +25,7 @@ from mindformers.trainer.utils import transform_and_load_checkpoint
 from mindformers import MindFormerConfig, build_context, BaseStreamer, build_parallel_config, logger, \
     AutoModel, AutoTokenizer, TextIteratorStreamer, AutoProcessor
 
+import re
 import sys
 sys.path.append('../research/qwen1_5/')
 from qwen1_5_tokenizer import Qwen2Tokenizer
@@ -52,7 +53,7 @@ def get_tokenizer(config: MindFormerConfig):
     if config.trainer.model_name in AutoTokenizer.get_support_list():
         return AutoTokenizer.from_pretrained(config.trainer.model_name)
     
-    elif 'qwen2_' in config.trainer.model_name:
+    elif config.trainer.model_name == 'qwen2_72b':
         second_config = ServerConfig(default_config['model']['config']).config
         return  Qwen2Tokenizer(second_config['processor']['tokenizer']['vocab_file'],
                               second_config['processor']['tokenizer']['merges_file'])
@@ -81,24 +82,35 @@ def get_current_role(history, default_role: str):
         return last_query[2]
     return default_role
 
-def build_qwen_prompt(inputs: str):
+def build_qwen_prompt(inputs: str, history):
     """Build qwen1.5 prompt template"""
-    prompt = "{}"
-    return prompt.format(inputs)
+     # Default system prompt template
+    default_prompt = "<|im_start|>system\n{role_description}.<|im_end|>\n<|im_start|>user\n{user_content}<|im_end|>\n<|im_start|>{role}\n{role_content}\n"
+    
+    # Define the regex patterns for role specification
+    #role_pattern = r"role-\s*(.+)\n|角色扮演-\s*(.+)\n"
+    role_pattern = r"(?:role:|角色扮演:)\s*([^\n:]+)"
+
+    # Search for role specification in the inputs
+    role_match = re.search(role_pattern, inputs)
+    if role_match:
+        role = role_match.group(1) or role_match.group(2)
+        current_role = role.strip()
+    else:
+        current_role = get_current_role(history, "You are a helpful assistant")
+        
+    # Modify prompt template based on language
+    modified_prompt = default_prompt.format(role_description=current_role, user_content=inputs,
+                                                             role_content="{role_content}", role=current_role)
+    return modified_prompt, current_role
 
 def build_multi_round_qwen(inputs, history):
     """Build multi round prompt for qwen1.5"""
-    default_system_prompt = "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n"
-
     # Construct previous rounds for history
-    multi_round_prompt = "<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n{}<|im_end|>\n"
     prev_rounds = ""
-
-    # Current round prompt
-    current_prompt = f"<|im_start|>user\n{inputs}<|im_end|>\n<|im_start|>assistant\n"
-    for i, (query, response) in enumerate(history):
-        prev_rounds += multi_round_prompt.format(query, response) 
-    return default_system_prompt + prev_rounds + current_prompt
+    for i, (query, response, role) in enumerate(history):
+        prev_rounds += inputs.format(role_description=role, user_content=query, role_content=response, role=role)
+    return prev_rounds + inputs
        
 
 def generate_process(device_id: int,
@@ -142,12 +154,14 @@ def generate_process(device_id: int,
         infer_data.pop('inputs')
         is_stream = infer_data.pop('stream', None)
 
-        if "qwen2_" in config.trainer.model_name:
-            prompted_inputs = build_qwen_prompt(inputs)
-            inputs = build_multi_round_qwen(prompted_inputs, history)
-        else:
-            prompted_inputs = build_prompt(inputs)
-            inputs = build_multi_round(prompted_inputs, history)
+        #if "qwen2_" in config.trainer.model_name:
+        #    prompted_inputs, role = build_qwen_prompt(inputs, history)
+        #    inputs = build_multi_round_qwen(prompted_inputs, history)
+        #else:
+        #    prompted_inputs = build_prompt(inputs)
+        #    inputs = build_multi_round(prompted_inputs, history)
+        prompted_inputs = build_prompt(inputs)
+        inputs = build_multi_round(prompted_inputs, history)
 
         input_ids = tokenizer(inputs)["input_ids"]
 
@@ -164,6 +178,9 @@ def generate_process(device_id: int,
 
         logger.info(f"{device_id} card generate output: {output}")
 
+        #if "qwen2_" in config.trainer.model_name:
+        #    history.append((prompted_inputs, output, role))
+        #else:
         history.append((prompted_inputs, output))
         if not is_stream:
             output_q.put_nowait(output)
@@ -205,7 +222,7 @@ class MindFormersInfer:
 
         # build streamer
         self.tokenizer = get_tokenizer(self.config)
-        self.streamer = TextIteratorStreamer(tokenizer=self.tokenizer, timeout=60.0, skip_prompt=True)
+        self.streamer = TextIteratorStreamer(tokenizer=self.tokenizer, skip_prompt=True)
 
         process_list = []
         for i in range(self.device_num):

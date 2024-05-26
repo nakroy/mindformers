@@ -64,6 +64,10 @@ async def create_chat_completion(request: ChatCompletionRequest):
     query = request.messages[-1].content
     logger.info('receive a request：{}'.format(request.messages))
 
+    prev_messages = request.messages[:-1]
+    if len(prev_messages) > 0 and prev_messages[0].role == 'system':
+        query = prev_messages.pop(0).content + query
+
     await sem.acquire()
     try:
         ms_infer.infer(query,
