@@ -55,7 +55,6 @@ async def health():
         'code': 200
     }
 
-
 @app.post("/generate")
 async def create_chat_completion(request: ChatCompletionRequest):
     """Create chat completion"""
@@ -66,11 +65,12 @@ async def create_chat_completion(request: ChatCompletionRequest):
 
     prev_messages = request.messages[:-1]
     if len(prev_messages) > 0 and prev_messages[0].role == 'system':
-        query = prev_messages.pop(0).content + query
+        query = prev_messages[0].content + '/system_prompt/' + query
 
     await sem.acquire()
     try:
-        ms_infer.infer(query,
+        ms_infer.infer(
+                       query,
                        do_sample=request.do_sample,
                        temperature=request.temperature,
                        repetition_penalty=request.repetition_penalty,

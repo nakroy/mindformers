@@ -74,32 +74,36 @@ def build_multi_round(inputs, history):
         prev_rounds += multi_round_prompt.format(i, query, response)
     return prev_rounds + inputs
 
-def get_current_role(history, default_role: str):
-    """Get current role from last history prompt query"""
-    if history:
-        last_query = history[-1]
-        return last_query[2]
-    return default_role
+def split_inputs(inputs):
+    split_token = '/system_prompt/'
+    system_content = ''
+    if split_token in inputs:
+        system_content, inputs = inputs.split(split_token, 1)
+    return system_content, inputs
 
-def build_qwen_prompt(inputs: str):
-    """Build qwen1.5 prompt template"""
-    prompt = "{}"
-    return prompt.format(inputs)
+def clear_history(inputs, history):
+    if inputs == '$#clear_history*&':
+        return '清除对话', ''
+    return inputs, history
+    
 
 def build_multi_round_qwen(inputs, history):
-    """Build multi round prompt for qwen1.5"""
-    default_system_prompt = "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n"
+    system_prompt_template = "<|im_start|>system\n{}<|im_end|>\n"
+    system_content, inputs = split_inputs(inputs)
+    inputs, history = clear_history(inputs, history)
+    system_prompt = ''
+    if history == '':
+        if system_content == '':
+            system_prompt = system_prompt_template.format('You are a helpful assistant.')
+        else:
+            system_prompt = system_prompt_template.format(system_content)
+    else:
+        if system_content != '':
+            system_prompt = system_prompt_template.format(system_content)
 
-    # Construct previous rounds for history
-    multi_round_prompt = "<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n{}<|im_end|>\n"
-    prev_rounds = ""
-
-    # Current round prompt
-    current_prompt = f"<|im_start|>user\n{inputs}<|im_end|>\n<|im_start|>assistant\n"
-    for i, (query, response) in enumerate(history):
-        prev_rounds += multi_round_prompt.format(query, response) 
-    return default_system_prompt + prev_rounds + current_prompt
-       
+    current_prompt = system_prompt + f"<|im_start|>user\n{inputs}<|im_end|>\n<|im_start|>assistant\n"
+    history = history + current_prompt
+    return history
 
 def generate_process(device_id: int,
                      device_num: int,
@@ -135,7 +139,10 @@ def generate_process(device_id: int,
         transform_and_load_checkpoint(config, model, network, infer_data, do_predict=True)
         logger.info(f"{device_id} card load checkpoint success")
 
-    history = []
+    if "qwen2_" in config.trainer.model_name:
+        history = ''
+    else:
+        history = []
     while True:
         infer_data: dict = input_q.get()
         inputs = infer_data['inputs']
@@ -143,13 +150,14 @@ def generate_process(device_id: int,
         is_stream = infer_data.pop('stream', None)
 
         if "qwen2_" in config.trainer.model_name:
-            prompted_inputs = build_qwen_prompt(inputs)
-            inputs = build_multi_round_qwen(prompted_inputs, history)
+            inputs = build_multi_round_qwen(inputs, history)
         else:
             prompted_inputs = build_prompt(inputs)
             inputs = build_multi_round(prompted_inputs, history)
 
         input_ids = tokenizer(inputs)["input_ids"]
+        if len(input_ids) > infer_data['max_length']:
+            input_ids = tokenizer('<|im_start|>system\n' + inputs.split('<|im_start|>system\n')[-1])["input_ids"]
 
         generation_kwargs = dict(
             input_ids=[input_ids]
@@ -164,7 +172,10 @@ def generate_process(device_id: int,
 
         logger.info(f"{device_id} card generate output: {output}")
 
-        history.append((prompted_inputs, output))
+        if "qwen2_" in config.trainer.model_name:
+            history = inputs + output + '<|im_end|>\n'
+        else:
+            history.append((prompted_inputs, output))
         if not is_stream:
             output_q.put_nowait(output)
             logger.debug(f"{device_id} card put output into output queue.")

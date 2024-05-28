@@ -98,7 +98,7 @@ def _build_prompt(inputs, prompt):
                    "input.")
 
 
-def _predict(inputs, bot, history, do_sample, top_k, top_p, temperature, repetition_penalty, max_length, prompt):
+def _predict(inputs, bot, history, do_sample, top_k, top_p, temperature, repetition_penalty, max_length, prompt, system_content):
     """predict"""
     output = ""
     bot.append((_parse_text(inputs), _parse_text(output)))
@@ -112,9 +112,11 @@ def _predict(inputs, bot, history, do_sample, top_k, top_p, temperature, repetit
         'max_length': max_length,
         'stream': True
     }
+    if system_content is not None:
+        data['messages'].insert(0, {'role': 'system', 'content': system_content})
 
     try:
-        response = requests.post(URL, json=data, timeout=60, stream=True)
+        response = requests.post(URL, json=data, timeout=300, stream=True)
         for line in response.iter_lines():
             if line:
                 line = line.decode(errors='replace')
@@ -142,11 +144,16 @@ def _reset_user_input():
     """reset user input"""
     return gr.update(value='')
 
+def _clear_history():
+    """clear chat history"""
+    _predict(
+        ['$#clear_history*&', chatbot, chat_history, do_sample_checkbox, top_k_slider, top_p_slider, temp_number,
+                      rp_number, max_len_number, prompt_input, system_content],
+                     [chatbot, chat_history])
 
 def _reset_state():
     """reset state"""
     return [], []
-
 
 def _set_do_sample_args(do_sample):
     return {top_k_slider: gr.update(visible=do_sample),
@@ -187,22 +194,26 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                 rp_number = gr.Number(value=1,
                                       label="repetition penalty", minimum=0,
                                       info="The penalty factor of the frequency that generated words")
-                max_len_number = gr.Number(value=8192, minimum=0,
+                max_len_number = gr.Number(value=16384, minimum=0,
                                            label="max length", info="The maximum length of the generated words")
                 prompt_input = gr.Textbox(label="prompt", placeholder="No prompt...", info="Add prompt to input",
                                           lines=3)
+                system_content = gr.Textbox(label="system description", 
+                                            placeholder="No system description...(Default is: You are a helpful assistant.)", 
+                                            info="Add system description", lines=3)
                 gr.Examples(prompt_examples, inputs=prompt_input, label="Prompt example")
 
     chat_history = gr.State([])
 
     submit_btn.click(_predict,
                      [user_input, chatbot, chat_history, do_sample_checkbox, top_k_slider, top_p_slider, temp_number,
-                      rp_number, max_len_number, prompt_input],
+                      rp_number, max_len_number, prompt_input, system_content],
                      [chatbot, chat_history],
                      show_progress=True)
     submit_btn.click(_reset_user_input, [], [user_input])
 
     empty_btn.click(_reset_state, outputs=[chatbot, chat_history], show_progress=True)
+    empty_btn.click(_clear_history, show_progress=True)
 
     do_sample_checkbox.change(_set_do_sample_args, [do_sample_checkbox], [top_k_slider, top_p_slider, temp_number])
 

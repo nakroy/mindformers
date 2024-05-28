@@ -19,7 +19,6 @@ from pydantic import BaseModel, Field
 
 from config.server_config import default_config
 
-
 class ChatMessage(BaseModel):
     """ChatMessage"""
     role: str
