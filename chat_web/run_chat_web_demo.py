@@ -144,13 +144,6 @@ def _reset_user_input():
     """reset user input"""
     return gr.update(value='')
 
-def _clear_history():
-    """clear chat history"""
-    _predict(
-        ['$#clear_history*&', chatbot, chat_history, do_sample_checkbox, top_k_slider, top_p_slider, temp_number,
-                      rp_number, max_len_number, prompt_input, system_content],
-                     [chatbot, chat_history])
-
 def _reset_state():
     """reset state"""
     return [], []
@@ -213,7 +206,6 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     submit_btn.click(_reset_user_input, [], [user_input])
 
     empty_btn.click(_reset_state, outputs=[chatbot, chat_history], show_progress=True)
-    empty_btn.click(_clear_history, show_progress=True)
 
     do_sample_checkbox.change(_set_do_sample_args, [do_sample_checkbox], [top_k_slider, top_p_slider, temp_number])
 

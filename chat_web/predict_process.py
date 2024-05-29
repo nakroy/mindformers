@@ -81,16 +81,15 @@ def split_inputs(inputs):
         system_content, inputs = inputs.split(split_token, 1)
     return system_content, inputs
 
-def clear_history(inputs, history):
-    if inputs == '$#clear_history*&':
-        return '清除对话', ''
-    return inputs, history
+def clear_history():    
+    return '清除对话', ''
     
 
 def build_multi_round_qwen(inputs, history):
     system_prompt_template = "<|im_start|>system\n{}<|im_end|>\n"
     system_content, inputs = split_inputs(inputs)
-    inputs, history = clear_history(inputs, history)
+    if inputs == '$#clear_history*&':       
+        inputs, history = clear_history()
     system_prompt = ''
     if history == '':
         if system_content == '':
@@ -157,7 +156,9 @@ def generate_process(device_id: int,
 
         input_ids = tokenizer(inputs)["input_ids"]
         if len(input_ids) > infer_data['max_length']:
-            input_ids = tokenizer('<|im_start|>system\n' + inputs.split('<|im_start|>system\n')[-1])["input_ids"]
+            last_user_inputs = "<|im_start|>user\n" + inputs.split('<|im_start|>user\n')[-1]
+            last_system_inputs = "<|im_start|>system\n" + inputs.split('<|im_start|>system\n')[-1].split('<|im_start|>')[0]
+            input_ids = tokenizer(f'{last_system_inputs}{last_user_inputs}')["input_ids"]
 
         generation_kwargs = dict(
             input_ids=[input_ids]
